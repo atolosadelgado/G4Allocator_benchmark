@@ -55,4 +55,15 @@ sudo chown alvarotd:alvarotd -R /usr/local/benchmark
 cmake --build build_benchmark -- -j 5  install
 ```
 
+# Indirection test
 
+This directory contains the results of indirection performance using G4Allocator, raw pointer or direct access. This is the results from the benchmark:
+
+```
+-------------------------------------------------------------------------------------
+Benchmark                                           Time             CPU   Iterations
+-------------------------------------------------------------------------------------
+BM_G4AllocatorIndirection/iterations:10000      68162 ns        68063 ns        10000
+BM_RawPointerIndirection/iterations:10000       69493 ns        69407 ns        10000
+BM_DirectAccess/iterations:10000                59423 ns        59363 ns        10000
+```

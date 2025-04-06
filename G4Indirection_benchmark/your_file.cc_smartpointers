@@ -1,0 +1,47 @@
+#include <benchmark/benchmark.h>
+#include <vector>
+#include <memory>
+
+struct Inner {
+    std::vector<int> values;
+    Inner() {
+        values.resize(10000);  // Initialize with space
+    }
+};
+
+struct Middle {
+    std::unique_ptr<Inner> inner;  // Using unique_ptr
+};
+
+struct Outer {
+    std::unique_ptr<Middle> middle;  // Using unique_ptr
+};
+
+static void BM_IndirectionWithSmartPointers(benchmark::State& state) {
+    std::vector<Outer> outers(10000);
+    std::vector<std::unique_ptr<Middle>> middles(10000);
+    std::vector<std::unique_ptr<Inner>> inners(10000);
+
+    // Initialize the vectors with appropriate data
+    for (int i = 0; i < 10000; ++i) {
+        inners[i] = std::make_unique<Inner>();  // Allocate Inner dynamically
+        inners[i]->values[i] = i;
+        middles[i] = std::make_unique<Middle>();  // Allocate Middle dynamically
+        middles[i]->inner = std::move(inners[i]);  // Move ownership
+        outers[i].middle = std::move(middles[i]);  // Move ownership
+    }
+
+    int sum = 0;
+    for (auto _ : state) {
+        for (int i = 0; i < 10000; ++i) {
+            sum += outers[i].middle->inner->values[i];  // Indirect access with smart pointers
+        }
+    }
+
+    benchmark::DoNotOptimize(sum);
+}
+
+BENCHMARK(BM_IndirectionWithSmartPointers);
+
+BENCHMARK_MAIN();
+

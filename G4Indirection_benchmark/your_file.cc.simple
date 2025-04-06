@@ -1,0 +1,52 @@
+#include <benchmark/benchmark.h>
+
+struct Inner {
+    int value = 42;
+};
+
+struct Middle {
+    Inner* inner;
+};
+
+struct Outer {
+    Middle* middle;
+};
+
+static void BM_Indirection(benchmark::State& state) {
+    Inner inner{42};
+    Middle middle{&inner};
+    Outer outer{&middle};
+
+    for (auto _ : state) {
+        benchmark::DoNotOptimize(outer.middle->inner->value);
+    }
+}
+BENCHMARK(BM_Indirection);
+
+static void BM_CachedPointer(benchmark::State& state) {
+    Inner inner{42};
+    Middle middle{&inner};
+    Outer outer{&middle};
+
+    for (auto _ : state) {
+        Inner* cached = outer.middle->inner;
+        benchmark::DoNotOptimize(cached->value);
+    }
+}
+BENCHMARK(BM_CachedPointer);
+
+struct Flat {
+    int value = 42;
+};
+
+static void BM_DirectAccess(benchmark::State& state) {
+    Flat flat{42};
+
+    for (auto _ : state) {
+        benchmark::DoNotOptimize(flat.value);
+    }
+}
+BENCHMARK(BM_DirectAccess);
+
+BENCHMARK_MAIN();
+

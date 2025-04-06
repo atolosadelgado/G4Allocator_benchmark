@@ -1,0 +1,67 @@
+#include <benchmark/benchmark.h>
+#include <vector>
+
+struct Inner {
+    std::vector<int> values;
+
+    Inner() {
+        values.resize(10000);  // Allocate space for 10,000 values
+    }
+};
+
+struct Middle {
+    Inner* inner;
+};
+
+struct Outer {
+    Middle* middle;
+};
+
+static void BM_IndirectionLoop(benchmark::State& state) {
+    // Allocate vectors and fill them
+    std::vector<Outer> outers(10000);
+    std::vector<Middle> middles(10000);
+    std::vector<Inner> inners(10000);
+
+    // Initialize the vectors with appropriate data
+    for (int i = 0; i < 10000; ++i) {
+        inners[i].values[i] = i;
+        middles[i].inner = &inners[i];
+        outers[i].middle = &middles[i];
+    }
+
+    int sum = 0;
+
+    // Benchmark loop
+    for (auto _ : state) {
+        for (int i = 0; i < 10000; ++i) {
+            sum += outers.at(i).middle->inner->values[i];
+        }
+    }
+
+    benchmark::DoNotOptimize(sum);
+}
+
+BENCHMARK(BM_IndirectionLoop);
+
+#include <benchmark/benchmark.h>
+#include <vector>
+
+static void BM_DirectAccess(benchmark::State& state) {
+    std::vector<int> values(10000);
+    for (int i = 0; i < 10000; ++i) {
+        values[i] = i;  // Initialize values directly in the vector
+    }
+
+    int sum = 0;
+    for (auto _ : state) {
+        for (int i = 0; i < 10000; ++i) {
+            sum += values[i];  // Direct access
+        }
+    }
+
+    benchmark::DoNotOptimize(sum);
+}
+BENCHMARK(BM_DirectAccess);
+
+BENCHMARK_MAIN();
